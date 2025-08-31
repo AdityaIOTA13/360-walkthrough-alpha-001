@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360° Walkthrough</title>
+    
+    <!-- 
+    INSTRUCTIONS:
+    1. Place your 360° images in the ./Data/ folder (or change IMAGE_DIR below)
+    2. Images should be named "Step 1.jpg", "Step 2.jpg", etc.
+    3. If using .png images, change EXT = ".png" in the config below
+    4. Run a local server: python3 -m http.server
+    5. Open http://localhost:8000 in your browser
+    -->
+    
+    <!-- A-Frame CDN -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        /* Navigation UI */
+        .nav-ui {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 12px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-button {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+        }
+        
+        .nav-button:active {
+            transform: scale(0.95);
+        }
+        
+        .nav-button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .step-indicator {
+            color: white;
+            font-size: 16px;
+            min-width: 80px;
+            text-align: center;
+            user-select: none;
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .loading-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Crossfade animation */
+        a-sky {
+            animation: fadeIn 0.25s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 600px) {
+            .nav-ui {
+                bottom: 10px;
+                padding: 8px 15px;
+                gap: 15px;
+            }
+            
+            .nav-button {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+            
+            .step-indicator {
+                font-size: 14px;
+            }
+        }
+        
+        /* Hide VR button */
+        .a-enter-vr {
+            display: none !important;
+        }
+        
+        /* Mini-map container */
+        .minimap-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 400px;
+            height: 340px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .minimap-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 1.0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .minimap-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        
+        .minimap-svg svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .path-vertex {
+            fill: rgba(46, 162, 245, 0.8);
+            stroke: white;
+            stroke-width: 4;
+            cursor: pointer;
+            transition: fill 0.3s ease, stroke 0.3s ease;
+            pointer-events: all;
+        }
+        
+        .path-vertex:hover {
+            fill: rgba(46, 162, 245, 1);
+            stroke: rgba(255, 255, 255, 1);
+            stroke-width: 5;
+        }
+        
+        .path-vertex.active {
+            fill: #FFD700;
+            stroke: #FFA500;
+            stroke-width: 5;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+        }
+        
+        .vertex-label {
+            fill: white;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        /* Page title */
+        .page-title {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            color: black;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 550;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Minimap title */
+        .minimap-title {
+            position: absolute;
+            top: 11px;
+            left: 10px;
+            color: black;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1001;
+            border: 0px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        /* Export button */
+        .export-button {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 1);
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            width: 48px;
+            height: 48px;
+        }
+        
+        .export-button:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateX(-50%) scale(1.05);
+        }
+        
+        .export-icon {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+        
+        /* Zoom controls */
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1000;
+        }
+        
+        .zoom-button {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .zoom-button:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.05);
+        }
+        
+        .zoom-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .zoom-button:disabled:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: none;
+        }
+        
+        .zoom-level {
+            background: rgba(255, 255, 255, 0.95);
+            color: black;
+            padding: 8px 0;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 400;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            width: 45px; /* Same width as buttons */
+            box-sizing: border-box;
+        }
+        
+        /* Date and time */
+        .date-time {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            color: black;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 400;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Pan instruction */
+        .pan-instruction {
+            position: fixed;
+            bottom: 95px; /* Above the navigation UI */
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 14px;
+            font-weight: 400;
+            z-index: 1000;
+        }
+        
+        /* Minimap toggle button */
+        .minimap-toggle {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            color: black;
+            border: none;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1001;
+            transition: all 0.3s ease;
+        }
+        
+        .minimap-toggle:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.05);
+        }
+        
+        /* Minimap states */
+        .minimap-container.minimized {
+            width: 200px;
+            height: 60px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .minimap-container.minimized .minimap-bg,
+        .minimap-container.minimized .minimap-svg,
+        .minimap-container.minimized .minimap-instructions {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .minimap-container.minimized .minimap-title {
+            font-size: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        /* Minimap instructions */
+        .minimap-instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: black;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-style: italic;
+            font-weight: 400;
+            z-index: 1001;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Mobile: hide minimap on small screens */
+        @media (max-width: 600px) {
+            .minimap-container {
+                display: none;
+            }
+            
+            .page-title {
+                font-size: 16px;
+                padding: 12px 16px;
+            }
+            
+            .pan-instruction {
+                bottom: 120px; /* Above the navigation UI on mobile */
+                font-size: 11px;
+            }
+            
+            .export-button {
+                width: 44px;
+                height: 44px;
+                padding: 10px;
+            }
+            
+            .export-icon {
+                width: 20px;
+                height: 20px;
+            }
+            
+            .zoom-controls {
+                bottom: 80px; /* Above the navigation UI */
+            }
+            
+            .zoom-button {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            
+            .zoom-level {
+                width: 40px; /* Match mobile button width */
+            }
+            
+            .date-time {
+                font-size: 12px;
+                padding: 10px 14px;
+                bottom: 10px;
+                left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Title -->
+    <div class="page-title">Site: Boomerang Club, 128</div>
+    <div class="pan-instruction">Click and drag to pan</div>
+    
+    <!-- Export Button -->
+    <button class="export-button" id="export-button">
+        <img src="Export%20Icon.png" alt="Export" class="export-icon">
+    </button>
+    
+    <!-- A-Frame Scene -->
+    <a-scene renderer="antialias: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: true; preserveDrawingBuffer: true;" screenshot="width: 1920; height: 1080;">
+        <!-- Camera with device orientation support -->
+        <a-camera 
+            look-controls="touchEnabled: true; magicWindowTrackingEnabled: true"
+            position="0 0 0">
+        </a-camera>
+        
+        <!-- 360° Image Sky -->
+        <a-sky id="sky-image" src="" rotation="0 -90 0" crossorigin="anonymous"></a-sky>
+    </a-scene>
+    
+    <!-- Navigation UI -->
+    <div class="nav-ui">
+        <button id="prev-btn" class="nav-button" aria-label="Previous step">←</button>
+        <div class="step-indicator" id="step-indicator">Step 1/18</div>
+        <button id="next-btn" class="nav-button" aria-label="Next step">→</button>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Zoom Controls -->
+    <div class="zoom-controls">
+        <button class="zoom-button" id="zoom-in">+</button>
+        <div class="zoom-level" id="zoom-level">100%</div>
+        <button class="zoom-button" id="zoom-out">−</button>
+    </div>
+    
+    <!-- Date and Time -->
+    <div class="date-time">25th Aug, 3:15 PM</div>
+    
+    <!-- Mini-map Navigation -->
+    <div class="minimap-container" id="minimap-container">
+        <div class="minimap-title">3rd Floor Plan</div>
+        <button class="minimap-toggle" id="minimap-toggle">−</button>
+        <div class="minimap-instructions">*Click on blue dots to jump steps</div>
+        <img class="minimap-bg" src="BG%20Image.png" alt="Map background">
+        <div class="minimap-svg" id="minimap-svg"></div>
+    </div>
+    
+    <script>
+        // Configuration
+        const IMAGE_DIR = './Data/';  // Change this if images are in a different folder
+        const EXT = '.jpg';           // Change to '.png' if using PNG images
+        const TOTAL_STEPS = 18;
+        const PRELOAD_AHEAD = 1;      // Number of images to preload ahead
+        
+        // State
+        let currentStep = 1;
+        let imageCache = new Map();
+        let isLoading = false;
+        let currentZoom = 100;
+        let isMinimapMinimized = false;
+        
+        // DOM Elements
+        const skyImage = document.getElementById('sky-image');
+        const stepIndicator = document.getElementById('step-indicator');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const minimapSvg = document.getElementById('minimap-svg');
+        const exportButton = document.getElementById('export-button');
+        const zoomInBtn = document.getElementById('zoom-in');
+        const zoomOutBtn = document.getElementById('zoom-out');
+        const zoomLevel = document.getElementById('zoom-level');
+        const minimapContainer = document.getElementById('minimap-container');
+        const minimapToggle = document.getElementById('minimap-toggle');
+        
+        // Parse SVG path and extract vertices
+        function parsePathVertices(pathData) {
+            const vertices = [];
+            // Split by commands and filter out empty strings
+            const parts = pathData.split(/([MLHVCSQTAZ])/i).filter(p => p.trim());
+            
+            let currentX = 0;
+            let currentY = 0;
+            let vertexCount = 0;
+            
+            for (let i = 0; i < parts.length; i++) {
+                const command = parts[i];
+                
+                if (command === 'M' || command === 'L') {
+                    // Move or Line command - has x,y coordinates
+                    i++;
+                    const coords = parts[i].trim().split(/\s+/);
+                    currentX = parseFloat(coords[0]);
+                    currentY = parseFloat(coords[1]);
+                    vertexCount++;
+                    vertices.push({ x: currentX, y: currentY, step: vertexCount });
+                } else if (command === 'H') {
+                    // Horizontal line - only x coordinate
+                    i++;
+                    currentX = parseFloat(parts[i].trim());
+                    vertexCount++;
+                    vertices.push({ x: currentX, y: currentY, step: vertexCount });
+                }
+            }
+            
+            // Ensure we have exactly 18 vertices
+            console.log(`Found ${vertices.length} vertices in SVG path`);
+            return vertices.slice(0, 18);
+        }
+        
+        // Create minimap with clickable vertices
+        async function createMinimap() {
+            try {
+                // Load the SVG
+                const response = await fetch('SVG%20Path.svg');
+                const svgText = await response.text();
+                
+                // Parse the SVG
+                const parser = new DOMParser();
+                const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+                const pathElement = svgDoc.querySelector('path');
+                const pathData = pathElement.getAttribute('d');
+                
+                // Get original SVG dimensions
+                const svgElement = svgDoc.querySelector('svg');
+                const viewBox = svgElement.getAttribute('viewBox').split(' ');
+                const svgWidth = parseFloat(viewBox[2]);
+                const svgHeight = parseFloat(viewBox[3]);
+                
+                // Create a new SVG for the minimap
+                const minimapSvgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                minimapSvgElement.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+                minimapSvgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                
+                // Add the path to the minimap
+                const minimapPath = pathElement.cloneNode(true);
+                minimapPath.style.opacity = '0.5';
+                minimapPath.setAttribute('fill', 'none'); // Ensure no fill
+                minimapPath.setAttribute('stroke', '#2EA2F5'); // Keep the blue stroke
+                minimapPath.setAttribute('stroke-width', '25');
+                minimapSvgElement.appendChild(minimapPath);
+                
+                // Parse vertices
+                const vertices = parsePathVertices(pathData);
+                
+                // Create clickable circles for each vertex
+                vertices.forEach((vertex, index) => {
+                    // Create group for vertex
+                    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    group.setAttribute('data-step', vertex.step);
+                    group.style.cursor = 'pointer';
+                    
+                    // Create circle
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', vertex.x);
+                    circle.setAttribute('cy', vertex.y);
+                    circle.setAttribute('r', '60'); // Larger for better click target
+                    circle.classList.add('path-vertex');
+                    circle.setAttribute('data-step', vertex.step);
+                    
+                    // Create label
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', vertex.x);
+                    label.setAttribute('y', vertex.y);
+                    label.classList.add('vertex-label');
+                    label.textContent = vertex.step;
+                    
+                    // Add click event to the entire group
+                    group.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const stepNum = parseInt(vertex.step);
+                        if (!isLoading && stepNum !== currentStep) {
+                            console.log(`Minimap click: Step ${stepNum}`);
+                            setStep(stepNum);
+                        }
+                    });
+                    
+                    // Add hover effects
+                    group.addEventListener('mouseenter', () => {
+                        if (parseInt(vertex.step) !== currentStep) {
+                            circle.style.transform = 'scale(1.15)';
+                            circle.style.transformOrigin = `${vertex.x}px ${vertex.y}px`;
+                        }
+                    });
+                    
+                    group.addEventListener('mouseleave', () => {
+                        circle.style.transform = 'scale(1)';
+                    });
+                    
+                    group.appendChild(circle);
+                    group.appendChild(label);
+                    minimapSvgElement.appendChild(group);
+                });
+                
+                // Add the SVG to the minimap container
+                minimapSvg.appendChild(minimapSvgElement);
+                
+                // Update the active vertex
+                updateMinimapActiveVertex();
+                
+            } catch (error) {
+                console.error('Error creating minimap:', error);
+                // Hide minimap if it fails to load
+                document.getElementById('minimap-container').style.display = 'none';
+            }
+        }
+        
+        // Update active vertex on minimap
+        function updateMinimapActiveVertex() {
+            const vertices = minimapSvg.querySelectorAll('.path-vertex');
+            vertices.forEach(vertex => {
+                const step = parseInt(vertex.getAttribute('data-step'));
+                if (step === currentStep) {
+                    vertex.classList.add('active');
+                } else {
+                    vertex.classList.remove('active');
+                }
+            });
+        }
+        
+        // Toggle minimap minimize/maximize
+        function toggleMinimap() {
+            isMinimapMinimized = !isMinimapMinimized;
+            
+            if (isMinimapMinimized) {
+                minimapContainer.classList.add('minimized');
+                minimapToggle.textContent = '+';
+                minimapToggle.title = 'Maximize minimap';
+            } else {
+                minimapContainer.classList.remove('minimized');
+                minimapToggle.textContent = '−';
+                minimapToggle.title = 'Minimize minimap';
+            }
+        }
+        
+        // Export current view as image
+        function exportCurrentView() {
+            try {
+                const scene = document.querySelector('a-scene');
+                
+                // Wait for scene to be ready and rendered
+                if (!scene || !scene.hasLoaded) {
+                    alert('Scene is still loading. Please try again in a moment.');
+                    return;
+                }
+                
+                console.log('Starting export...');
+                
+                // Method 1: Use A-Frame's built-in screenshot component
+                if (scene.components && scene.components.screenshot) {
+                    console.log('Using A-Frame screenshot component');
+                    const filename = `Boomerang_Club_Step_${currentStep}_${new Date().toISOString().slice(0, 10)}`;
+                    scene.components.screenshot.capture('perspective', filename);
+                    return;
+                }
+                
+                // Method 2: Manual canvas capture with enhanced settings
+                setTimeout(() => {
+                    try {
+                        // Force a render first
+                        if (scene.renderer && scene.camera) {
+                            scene.renderer.render(scene.object3D, scene.camera);
+                        }
+                        
+                        // Get canvas with multiple fallback methods
+                        let canvas = null;
+                        
+                        // Try different canvas access methods
+                        if (scene.canvas) {
+                            canvas = scene.canvas;
+                        } else if (scene.renderer && scene.renderer.domElement) {
+                            canvas = scene.renderer.domElement;
+                        } else {
+                            // DOM query fallback
+                            canvas = scene.querySelector('canvas') || 
+                                    document.querySelector('a-scene canvas') ||
+                                    document.querySelector('canvas[data-engine="three.js r150"]') ||
+                                    document.querySelector('canvas');
+                        }
+                        
+                        if (!canvas) {
+                            throw new Error('Canvas not found');
+                        }
+                        
+                        console.log('Canvas found:', {
+                            width: canvas.width,
+                            height: canvas.height,
+                            className: canvas.className,
+                            context: canvas.getContext ? 'available' : 'not available'
+                        });
+                        
+                        // Method 2a: Try toBlob first (more reliable for large images)
+                        const exportWithBlob = () => {
+                            canvas.toBlob((blob) => {
+                                if (blob && blob.size > 1000) {
+                                    const url = URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `Boomerang_Club_Step_${currentStep}_${new Date().toISOString().slice(0, 10)}.png`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    URL.revokeObjectURL(url);
+                                    console.log('Export successful via blob');
+                                } else {
+                                    // Fallback to dataURL
+                                    exportWithDataURL();
+                                }
+                            }, 'image/png', 1.0);
+                        };
+                        
+                        // Method 2b: DataURL fallback
+                        const exportWithDataURL = () => {
+                            try {
+                                const dataURL = canvas.toDataURL('image/png', 1.0);
+                                
+                                // Check if image is valid (not blank/empty)
+                                if (dataURL && dataURL.length > 1000 && 
+                                    !dataURL.includes('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==')) {
+                                    
+                                    const link = document.createElement('a');
+                                    link.href = dataURL;
+                                    link.download = `Boomerang_Club_Step_${currentStep}_${new Date().toISOString().slice(0, 10)}.png`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    console.log('Export successful via dataURL');
+                                } else {
+                                    throw new Error('Canvas appears to be blank or empty');
+                                }
+                            } catch (error) {
+                                console.error('DataURL export failed:', error);
+                                alert('Export failed: Canvas could not be captured. This may be due to WebGL restrictions or cross-origin issues.');
+                            }
+                        };
+                        
+                        // Start with blob method
+                        exportWithBlob();
+                        
+                    } catch (error) {
+                        console.error('Manual canvas export error:', error);
+                        alert('Export failed: ' + error.message);
+                    }
+                }, 300); // Longer delay to ensure rendering is complete
+                
+            } catch (error) {
+                console.error('Export function error:', error);
+                alert('Export failed: ' + error.message);
+            }
+        }
+        
+        // Update zoom level
+        function updateZoom(direction) {
+            const zoomStep = 25;
+            const minZoom = 50;
+            const maxZoom = 200;
+            
+            if (direction === 'in' && currentZoom < maxZoom) {
+                currentZoom += zoomStep;
+            } else if (direction === 'out' && currentZoom > minZoom) {
+                currentZoom -= zoomStep;
+            } else if (direction === 'reset') {
+                currentZoom = 100; // Reset to default
+            }
+            
+            // Update camera FOV based on zoom
+            const camera = document.querySelector('a-camera');
+            if (camera) {
+                const baseFov = 80; // Default A-Frame FOV
+                const newFov = baseFov * (100 / currentZoom);
+                camera.setAttribute('camera', 'fov', newFov);
+            }
+            
+            // Update zoom level display
+            if (zoomLevel) {
+                zoomLevel.textContent = `${currentZoom}%`;
+            }
+            
+            // Update button states
+            if (zoomInBtn && zoomOutBtn) {
+                zoomInBtn.disabled = currentZoom >= maxZoom;
+                zoomOutBtn.disabled = currentZoom <= minZoom;
+            }
+        }
+        
+        // Generate image URL for a given step
+        function getImageUrl(step) {
+            // Encode URI to handle spaces in filename
+            return encodeURI(`${IMAGE_DIR}Step ${step}${EXT}`);
+        }
+        
+        // Preload an image
+        function preloadImage(step) {
+            return new Promise((resolve, reject) => {
+                const url = getImageUrl(step);
+                
+                // Check if already cached
+                if (imageCache.has(step)) {
+                    resolve(url);
+                    return;
+                }
+                
+                const img = new Image();
+                img.crossOrigin = 'anonymous'; // Enable CORS for canvas export
+                img.onload = () => {
+                    imageCache.set(step, img);
+                    resolve(url);
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load image for step ${step}`);
+                    reject(new Error(`Failed to load ${url}`));
+                };
+                img.src = url;
+            });
+        }
+        
+        // Show loading overlay
+        function showLoading() {
+            loadingOverlay.classList.add('visible');
+            isLoading = true;
+        }
+        
+        // Hide loading overlay
+        function hideLoading() {
+            loadingOverlay.classList.remove('visible');
+            isLoading = false;
+        }
+        
+        // Update the current step
+        async function setStep(step, skipAnimation = false) {
+            if (isLoading || step < 1 || step > TOTAL_STEPS) return;
+            
+            showLoading();
+            
+            try {
+                // Preload the image
+                const url = await preloadImage(step);
+                
+                // Update the sky with crossfade
+                if (!skipAnimation) {
+                    skyImage.style.animation = 'none';
+                    setTimeout(() => {
+                        skyImage.style.animation = 'fadeIn 0.25s ease-out';
+                    }, 10);
+                }
+                
+                skyImage.setAttribute('src', url);
+                currentStep = step;
+                
+                // Update UI
+                stepIndicator.textContent = `Step ${currentStep}/${TOTAL_STEPS}`;
+                prevBtn.disabled = currentStep === 1;
+                nextBtn.disabled = currentStep === TOTAL_STEPS;
+                
+                // Update minimap
+                updateMinimapActiveVertex();
+                
+                // Preload next images
+                for (let i = 1; i <= PRELOAD_AHEAD; i++) {
+                    const nextStep = currentStep + i;
+                    if (nextStep <= TOTAL_STEPS) {
+                        preloadImage(nextStep).catch(() => {
+                            // Ignore preload errors
+                        });
+                    }
+                }
+                
+                // Hide loading after a minimum duration for smooth UX
+                setTimeout(hideLoading, 300);
+                
+            } catch (error) {
+                console.error('Error loading step:', error);
+                hideLoading();
+                alert(`Failed to load Step ${step}. Please check that the image exists.`);
+            }
+        }
+        
+        // Navigation functions
+        function goToNext() {
+            if (currentStep < TOTAL_STEPS) {
+                setStep(currentStep + 1);
+            } else {
+                // Wrap around to beginning
+                setStep(1);
+            }
+        }
+        
+        function goToPrev() {
+            if (currentStep > 1) {
+                setStep(currentStep - 1);
+            } else {
+                // Wrap around to end
+                setStep(TOTAL_STEPS);
+            }
+        }
+        
+        // Event listeners
+        prevBtn.addEventListener('click', goToPrev);
+        nextBtn.addEventListener('click', goToNext);
+        
+        // Export and zoom event listeners
+        exportButton.addEventListener('click', exportCurrentView);
+        zoomInBtn.addEventListener('click', () => updateZoom('in'));
+        zoomOutBtn.addEventListener('click', () => updateZoom('out'));
+        
+        // Minimap toggle event listener
+        minimapToggle.addEventListener('click', toggleMinimap);
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (isLoading) return;
+            
+            switch(e.key) {
+                case 'ArrowRight':
+                    e.preventDefault();
+                    goToNext();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    goToPrev();
+                    break;
+                case 'Home':
+                    e.preventDefault();
+                    setStep(1);
+                    break;
+                case 'End':
+                    e.preventDefault();
+                    setStep(TOTAL_STEPS);
+                    break;
+                case '=':
+                case '+':
+                    e.preventDefault();
+                    updateZoom('in');
+                    break;
+                case '-':
+                case '_':
+                    e.preventDefault();
+                    updateZoom('out');
+                    break;
+                case 'e':
+                case 'E':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        exportCurrentView();
+                    }
+                    break;
+                case 'm':
+                case 'M':
+                    e.preventDefault();
+                    toggleMinimap();
+                    break;
+            }
+        });
+        
+        // Touch swipe support (optional enhancement)
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // Swipe left - go next
+                    goToNext();
+                } else {
+                    // Swipe right - go prev
+                    goToPrev();
+                }
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            // Create the minimap
+            createMinimap();
+            
+            // Load the first step
+            setStep(1, true);
+            
+            // Initialize zoom controls
+            updateZoom('reset'); // Set initial state
+            
+            // Preload a few images ahead
+            for (let i = 2; i <= Math.min(3, TOTAL_STEPS); i++) {
+                preloadImage(i).catch(() => {
+                    // Ignore preload errors
+                });
+            }
+        });
+        
+        // Handle A-Frame scene load errors
+        document.querySelector('a-scene').addEventListener('loaded', () => {
+            console.log('A-Frame scene loaded successfully');
+        });
+    </script>
+</body>
+</html>
