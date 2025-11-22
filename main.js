@@ -811,37 +811,41 @@ function createCommentPins() {
         
         console.log(`Using icon: ${iconPath}`);
         
-        // Wrapper keeps simple animations
+        // Wrapper keeps simple animations and faces camera
         const pinIcon = document.createElement('a-entity');
         pinIcon.setAttribute('position', '0 0 0');
         pinIcon.setAttribute('class', 'comment-pin-wrapper');
+        pinIcon.setAttribute('look-at', '[camera]');
         
-        // Billboard sprite that always faces the camera
-        const iconBillboard = document.createElement('a-entity');
-        iconBillboard.setAttribute('pin-sprite', `src: ${iconPath}; size: 1.15`);
-        iconBillboard.setAttribute('class', 'comment-pin');
-        iconBillboard.setAttribute('data-comment-index', index);
-        pinIcon.appendChild(iconBillboard);
+        const iconPlane = document.createElement('a-plane');
+        iconPlane.setAttribute('src', iconPath);
+        iconPlane.setAttribute('width', '1.275');
+        iconPlane.setAttribute('height', '1.275');
+        iconPlane.setAttribute('material', 'transparent: true; alphaTest: 0.1; shader: flat; side: double');
+        iconPlane.setAttribute('scale', '1 1 1');
+        iconPlane.setAttribute('class', 'comment-pin');
+        iconPlane.setAttribute('data-comment-index', index);
+        pinIcon.appendChild(iconPlane);
         
         // Add pulsating animation to wrapper (smaller scale to keep it sharp)
         pinIcon.setAttribute('animation__pulse', 'property: scale; to: 1.05 1.05 1.05; dir: alternate; loop: true; dur: 1500; easing: easeInOutSine');
         
         // Add animations for hover and click (reduce scale to prevent blur)
-        iconBillboard.setAttribute('animation__mouseenter', 'property: scale; to: 1.2 1.2 1.2; dur: 200; startEvents: mouseenter; pauseEvents: mouseleave');
-        iconBillboard.setAttribute('animation__mouseleave', 'property: scale; to: 1.15 1.15 1.15; dur: 200; startEvents: mouseleave');
+        iconPlane.setAttribute('animation__mouseenter', 'property: scale; to: 1.15 1.15 1.15; dur: 200; startEvents: mouseenter; pauseEvents: mouseleave');
+        iconPlane.setAttribute('animation__mouseleave', 'property: scale; to: 1 1 1; dur: 200; startEvents: mouseleave');
         
         // Show/hide 2D tooltip on hover
-        iconBillboard.addEventListener('mouseenter', (e) => {
+        iconPlane.addEventListener('mouseenter', (e) => {
             commentTooltip2D.textContent = commentData.title;
             commentTooltip2D.classList.add('visible');
         });
         
-        iconBillboard.addEventListener('mouseleave', () => {
+        iconPlane.addEventListener('mouseleave', () => {
             commentTooltip2D.classList.remove('visible');
         });
         
         // Add click handler
-        iconBillboard.addEventListener('click', () => {
+        iconPlane.addEventListener('click', () => {
             if (isAddCommentMode) return;
             commentTooltip2D.classList.remove('visible'); // Hide tooltip immediately
             showCommentPopup(commentData);
