@@ -321,7 +321,7 @@ a-sky {
     width: 400px;
     height: 340px;
     background: rgba(0, 0, 0, 0.8);
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
     z-index: 1000;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
@@ -461,7 +461,7 @@ a-sky {
     background: rgba(255, 255, 255, 0.95);
     color: black;
     padding: 15px 20px;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 15px;
     font-weight: 550;
     z-index: 1000;
@@ -537,7 +537,7 @@ a-sky {
     background: rgba(255, 255, 255, 0.95);
     border: 1px solid rgba(0, 0, 0, 0.1);
     padding: 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.25s ease;
     display: flex;
@@ -584,7 +584,7 @@ a-sky {
     height: 45px;
     background: rgba(255, 255, 255, 0.95);
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
     font-size: 20px;
     font-weight: bold;
@@ -617,7 +617,7 @@ a-sky {
     background: rgba(255, 255, 255, 0.95);
     color: black;
     padding: 8px 0;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 10px;
     font-weight: 400;
     text-align: center;
@@ -652,7 +652,7 @@ a-sky {
 }
 
 .view-comments-btn {
-    background: linear-gradient(120deg, rgba(255, 255, 255, 0.95), rgba(241, 248, 255, 0.92));
+    background: #ffffff;
     color: black;
     padding: 0 4px;
     height: 48px;
@@ -661,7 +661,7 @@ a-sky {
     font-weight: 400;
     line-height: 1.4;
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(12, 140, 233, 0.18);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
     cursor: pointer;
     display: flex;
@@ -683,7 +683,7 @@ a-sky {
 }
 
 .view-comments-btn:hover {
-    background: linear-gradient(120deg, rgba(255, 255, 255, 1), rgba(231, 240, 252, 0.96));
+    background: #ffffff;
     transform: translateY(-3px);
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
 }
@@ -701,12 +701,12 @@ a-sky {
     position: absolute;
     bottom: 60px;
     left: 0;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(237, 245, 255, 0.94));
+    background: #ffffff;
     border-radius: 18px;
     padding: 18px;
     box-shadow: 0 18px 55px rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(16px);
-    border: 1px solid rgba(12, 140, 233, 0.18);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     min-width: 380px;
     max-width: 440px;
     opacity: 0;
@@ -848,11 +848,11 @@ a-sky {
     justify-content: space-between;
     padding: 12px 14px;
     margin-bottom: 8px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 255, 0.9));
+    background: #ffffff;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.25s ease;
-    border: 1px solid rgba(12, 140, 233, 0.16);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.1);
     position: relative;
     overflow: hidden;
@@ -973,7 +973,7 @@ a-sky {
 .comments-list-footer {
     padding: 12px 14px;
     border-top: 1px solid rgba(0, 0, 0, 0.05);
-    background: linear-gradient(180deg, rgba(245, 248, 255, 0.9), rgba(237, 243, 254, 0.9));
+    background: #ffffff;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -986,8 +986,8 @@ a-sky {
     gap: 10px;
     padding: 8px 12px;
     border-radius: 10px;
-    border: 1px solid rgba(12, 140, 233, 0.2);
-    background: linear-gradient(120deg, rgba(12, 140, 233, 0.16), rgba(12, 140, 233, 0.08));
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #ffffff;
     color: #0F172A;
     font-weight: 700;
     cursor: pointer;
@@ -1249,7 +1249,7 @@ a-sky {
     color: black;
     padding: 0 4px;
     height: 48px;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 14px;
     font-weight: 400;
     line-height: 1.4;
@@ -1425,7 +1425,7 @@ a-sky {
     color: black;
     border: none;
     padding: 10px 14px;
-    border-radius: 6px;
+    border-radius: 12px;
     cursor: pointer;
     font-size: 18px;
     font-weight: bold;
