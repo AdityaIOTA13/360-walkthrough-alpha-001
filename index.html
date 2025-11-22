@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>360° Walkthrough</title>
     
     <!-- 
@@ -19,6 +19,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet">
     
+    <!-- Preconnect to Cloudflare R2 for faster image loading -->
+    <link rel="preconnect" href="https://pub-a901561e98c4422f9a0df782ce967b67.r2.dev" crossorigin>
+    
+    <!-- Preload A-Frame for faster initialization -->
+    <link rel="dns-prefetch" href="https://aframe.io">
+    
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
     
@@ -30,10 +36,15 @@
     <div class="page-title">Boomerang Sports Club, 128</div>
     <div class="pan-instruction">Click and drag to pan</div>
     
-    <!-- Export Button -->
-    <button class="export-button" id="export-button">
-        <img src="data/icons/Export%20Icon.png" alt="Export" class="export-icon">
-    </button>
+    <!-- Actions (Add Comment + Export) -->
+    <div class="action-buttons">
+        <button class="add-comment-button" id="add-comment-btn" title="Drop comment (C)">
+            <img src="data/icons/comment_icon.png" alt="Add Comment" class="add-comment-icon">
+        </button>
+        <button class="export-button" id="export-button" title="Export view">
+            <img src="data/icons/Export%20Icon.png" alt="Export" class="export-icon">
+        </button>
+    </div>
     
     <!-- A-Frame Scene -->
     <a-scene renderer="antialias: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: true; preserveDrawingBuffer: true;" screenshot="width: 1920; height: 1080;">
@@ -95,9 +106,84 @@
         <button class="zoom-button" id="zoom-out">−</button>
     </div>
     
-    <!-- Date and Time -->
-    <div class="date-time">25th Aug, 3:15 PM</div>
-    
+    <!-- Bottom Left Controls (Date & Comments) -->
+    <div class="bottom-left-controls">
+        <!-- Comments Viewer -->
+        <div class="comments-viewer-container" id="comments-viewer-container">
+            <button class="view-comments-btn" id="view-comments-btn">
+                <span>📋</span>
+                <span>Comments</span>
+                <span class="comments-dropdown-arrow">▼</span>
+            </button>
+            <div class="comments-list-popup" id="comments-list-popup">
+                <div class="comments-list-header">
+                    <div class="comments-header-text">
+                        <p class="comments-kicker">Live Feed</p>
+                        <h3>All Comments</h3>
+                        <p class="comments-subtitle">Active flags across the site</p>
+                    </div>
+                    <div class="comments-header-badges">
+                        <span class="comment-pill comment-pill-live">Live</span>
+                        <span class="comment-pill comment-pill-count" id="comments-count-badge">0 open</span>
+                    </div>
+                </div>
+                <div class="comments-list-content" id="comments-list-content">
+                    <!-- Comments will be populated by JavaScript -->
+                </div>
+                <div class="comments-list-footer">
+                    <button class="resolved-comments-btn" id="resolved-comments-trigger">
+                        <span class="resolved-btn-icon">✔︎</span>
+                        <span class="resolved-btn-copy">
+                            Resolved Comments
+                            <small>View archive</small>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Date and Time -->
+        <div class="date-time-container" id="date-time-container">
+            <button class="date-time" id="date-time-trigger">
+                <span>25th Aug, 3:15 PM</span>
+                <span class="date-dropdown-arrow">▼</span>
+            </button>
+            <div class="calendar-picker" id="calendar-picker">
+                <div class="calendar-header">
+                    <button class="calendar-nav-btn" id="prev-month">‹</button>
+                    <div class="calendar-month" id="calendar-month">August 2024</div>
+                    <button class="calendar-nav-btn" id="next-month">›</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <div class="calendar-weekday">S</div>
+                    <div class="calendar-weekday">M</div>
+                    <div class="calendar-weekday">T</div>
+                    <div class="calendar-weekday">W</div>
+                    <div class="calendar-weekday">T</div>
+                    <div class="calendar-weekday">F</div>
+                    <div class="calendar-weekday">S</div>
+                </div>
+                <div class="calendar-days" id="calendar-days">
+                    <!-- Days will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="resolved-panel-overlay" id="resolved-panel-overlay"></div>
+    <aside class="resolved-comments-panel" id="resolved-comments-panel">
+        <div class="resolved-panel-header">
+            <div class="resolved-panel-titles">
+                <p class="resolved-kicker">Archive</p>
+                <h3>Resolved Comments</h3>
+                <p class="resolved-subtitle">Everything that’s been marked done, sorted by location.</p>
+            </div>
+            <button class="resolved-panel-close" id="resolved-panel-close" aria-label="Close resolved comments">✕</button>
+        </div>
+        <div class="resolved-comments-list" id="resolved-comments-list">
+            <!-- Resolved comments populated by JavaScript -->
+        </div>
+    </aside>
     <!-- Mini-map Navigation -->
     <div class="minimap-container" id="minimap-container">
         <div class="minimap-title">
@@ -121,12 +207,52 @@
     <!-- Comment Popup -->
     <div class="comment-overlay" id="comment-overlay"></div>
     <div class="comment-popup" id="comment-popup">
-        <div class="comment-risk-badge" id="comment-risk-badge">NORMAL RISK</div>
-        <button class="comment-close" id="comment-close">×</button>
+        <div class="comment-popup-top">
+            <div class="comment-risk-badge" id="comment-risk-badge">NORMAL RISK</div>
+            <button class="comment-close" id="comment-close">×</button>
+        </div>
         <h3 class="comment-title" id="comment-title">Comment Title</h3>
         <p class="comment-description" id="comment-description">Comment description goes here.</p>
+        <div class="comment-thread-card">
+            <div class="comment-thread-header">
+                <div class="comment-thread-title">
+                    <span class="comment-thread-label">Replies</span>
+                </div>
+                <span class="comment-thread-count" id="comment-thread-count">0</span>
+            </div>
+            <div class="comment-thread-list" id="comment-thread-list"></div>
+            <div class="comment-reply-box">
+                <div class="comment-reply-input" id="comment-reply-input" contenteditable="true" data-placeholder="Reply to this comment..."></div>
+                <div class="comment-reply-actions">
+                    <button class="comment-reply-send" id="comment-reply-send" disabled>Reply</button>
+                </div>
+            </div>
+        </div>
+        <button class="comment-delete" id="comment-delete">Delete</button>
     </div>
-    
+
+    <!-- Add Comment Helpers -->
+    <div class="add-comment-hint" id="add-comment-hint">Click the 360° view to place a sticky note</div>
+    <div class="add-comment-composer" id="add-comment-composer">
+        <div class="add-comment-header">
+            <div class="add-comment-title">Drop a sticky note</div>
+            <div class="add-comment-subtitle">Pinned to the spot you just clicked</div>
+        </div>
+        <div class="add-comment-fields">
+            <input type="text" id="add-comment-input" placeholder="Type your comment" autocomplete="off" />
+            <select id="add-comment-risk">
+                <option value="normal">Normal</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="info">Info</option>
+            </select>
+        </div>
+        <div class="add-comment-actions">
+            <button class="add-comment-cancel" id="add-comment-cancel">Cancel</button>
+            <button class="add-comment-save" id="add-comment-save" disabled>Post</button>
+        </div>
+    </div>
+
     <!-- Main JavaScript -->
     <script src="main.js"></script>
 </body>

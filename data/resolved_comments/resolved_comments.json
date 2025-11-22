@@ -1,0 +1,90 @@
+[
+    {
+        "commentId": 5,
+        "location": "2nd Floor - Step 4",
+        "riskLevel": "Medium Risk",
+        "title": "Loose Guardrail at Stair Core",
+        "description": "Temporary guardrail at the stair core was found loose and unstable. Status: Resolved – guardrail was re-fixed with additional fasteners and inspected by safety officer.",
+        "resolved": true
+    },
+    {
+        "commentId": 6,
+        "location": "Basement - Step 9",
+        "riskLevel": "High Risk",
+        "title": "Water Ingress Near Electrical Room",
+        "description": "Water was observed seeping through slab near the electrical room entry. Status: Resolved – leak path sealed, area dried, and electrical panels checked for moisture.",
+        "resolved": true
+    },
+    {
+        "commentId": 7,
+        "location": "Ground Floor - Step 3",
+        "riskLevel": "Normal Risk",
+        "title": "Blocked Access Path",
+        "description": "Material pallets were blocking the main circulation path for workers. Status: Resolved – pallets relocated to designated storage zone and path re-marked.",
+        "resolved": true
+    },
+    {
+        "commentId": 8,
+        "location": "1st Floor - Step 11",
+        "riskLevel": "Medium Risk",
+        "title": "Unmarked Opening in Slab",
+        "description": "Floor opening for future ductwork was left unbarricaded and unmarked. Status: Resolved – opening has been barricaded and warning signage installed.",
+        "resolved": true
+    },
+    {
+        "commentId": 9,
+        "location": "3rd Floor - Step 7",
+        "riskLevel": "Info",
+        "title": "Column Concreting Completed",
+        "description": "All 3rd floor columns in grid B–D / 2–5 have been cast and initial curing has started. Status: Resolved – QA/QC checks completed and logged.",
+        "resolved": true
+    },
+    {
+        "commentId": 10,
+        "location": "Roof - Step 2",
+        "riskLevel": "Medium Risk",
+        "title": "Unsecured Rebar Bundles",
+        "description": "Rebar bundles stored near roof edge were not properly tied down. Status: Resolved – bundles secured with ties and moved 2m away from edge protection.",
+        "resolved": true
+    },
+    {
+        "commentId": 11,
+        "location": "Site Perimeter - Step 5",
+        "riskLevel": "High Risk",
+        "title": "Missing Safety Signage at Gate",
+        "description": "No PPE/speed limit signage was visible at the main site entrance gate. Status: Resolved – mandatory signage installed and photographed for records.",
+        "resolved": true
+    },
+    {
+        "commentId": 12,
+        "location": "Ground Floor - Step 18",
+        "riskLevel": "Normal Risk",
+        "title": "Inadequate Housekeeping Near Lift Core",
+        "description": "Tools and off-cuts scattered around lift core area created minor trip hazards. Status: Resolved – area cleaned and housekeeping checklist updated.",
+        "resolved": true
+    },
+    {
+        "commentId": 13,
+        "location": "2nd Floor - Step 20",
+        "riskLevel": "Medium Risk",
+        "title": "Scaffolding Toe Boards Missing",
+        "description": "Toe boards were missing on external scaffolding facing north elevation. Status: Resolved – toe boards installed along full length and re-inspected.",
+        "resolved": true
+    },
+    {
+        "commentId": 14,
+        "location": "Roof - Step 10",
+        "riskLevel": "Info",
+        "title": "Solar Panel Mounts Aligned",
+        "description": "All solar panel mounting rails have been fixed and aligned as per layout. Status: Resolved – alignment verified with site engineer and documented.",
+        "resolved": true
+    },
+    {
+        "commentId": 15,
+        "location": "Basement - Step 15",
+        "riskLevel": "High Risk",
+        "title": "Improper Cylinder Storage",
+        "description": "Gas cylinders were stored upright but without chains or racks. Status: Resolved – cylinders shifted to designated cage and secured with chains.",
+        "resolved": true
+    }
+]
