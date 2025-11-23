@@ -24,6 +24,7 @@
     
     <!-- Preload A-Frame for faster initialization -->
     <link rel="dns-prefetch" href="https://aframe.io">
+    <link rel="preload" as="image" href="https://pub-a901561e98c4422f9a0df782ce967b67.r2.dev/Boomerang_Club_360/floor-3/step-01.jpg" crossorigin fetchpriority="high">
     
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
@@ -36,14 +37,17 @@
     <div class="page-title">Boomerang Sports Club, 128</div>
     <div class="pan-instruction">Click and drag to pan</div>
     
-    <!-- Actions (Add Comment + Export) -->
-    <div class="action-buttons">
+    <!-- Right Controls (Comments, Export, Zoom) -->
+    <div class="right-controls">
         <button class="add-comment-button" id="add-comment-btn" title="Drop comment (C)">
             <img src="data/icons/comment_icon.png" alt="Add Comment" class="add-comment-icon">
         </button>
         <button class="export-button" id="export-button" title="Export view">
             <img src="data/icons/Export%20Icon.png" alt="Export" class="export-icon">
         </button>
+        <button class="zoom-button" id="zoom-in">+</button>
+        <div class="zoom-level" id="zoom-level">100%</div>
+        <button class="zoom-button" id="zoom-out">−</button>
     </div>
     
     <!-- A-Frame Scene -->
@@ -56,7 +60,7 @@
         </a-camera>
         
         <!-- 360° Image Sky -->
-        <a-sky id="sky-image" src="" rotation="0 -90 0" crossorigin="anonymous"></a-sky>
+        <a-sky id="sky-image" src="data/placeholder/Step 1.jpg" rotation="0 -90 0" crossorigin="anonymous"></a-sky>
         
         <!-- Comment Pins Container -->
         <a-entity id="comment-pins"></a-entity>
@@ -99,19 +103,11 @@
         </div>
     </div>
     
-    <!-- Zoom Controls -->
-    <div class="zoom-controls">
-        <button class="zoom-button" id="zoom-in">+</button>
-        <div class="zoom-level" id="zoom-level">100%</div>
-        <button class="zoom-button" id="zoom-out">−</button>
-    </div>
-    
     <!-- Bottom Left Controls (Date & Comments) -->
     <div class="bottom-left-controls">
         <!-- Comments Viewer -->
         <div class="comments-viewer-container" id="comments-viewer-container">
             <button class="view-comments-btn" id="view-comments-btn">
-                <span>📋</span>
                 <span>Comments</span>
                 <span class="comments-dropdown-arrow">▼</span>
             </button>

@@ -521,14 +521,14 @@ a-sky {
     box-shadow: 0 0 0 3px rgba(46, 162, 245, 0.2);
 }
 
-/* Export + Add Comment buttons */
-.action-buttons {
+/* Right-side controls (comments/export + zoom) */
+.right-controls {
     position: fixed;
-    bottom: 175px;
+    bottom: 20px;
     right: 20px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     z-index: 1000;
 }
 
@@ -566,17 +566,6 @@ a-sky {
     width: 26px;
     height: 26px;
     object-fit: contain;
-}
-
-/* Zoom controls */
-.zoom-controls {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 1000;
 }
 
 .zoom-button {
@@ -654,7 +643,7 @@ a-sky {
 .view-comments-btn {
     background: #ffffff;
     color: black;
-    padding: 0 4px;
+    padding: 0 12px;
     height: 48px;
     border-radius: 12px;
     font-size: 14px;
@@ -670,16 +659,16 @@ a-sky {
     transition: all 0.3s ease;
     user-select: none;
     font-family: 'Manrope', sans-serif;
-    width: 200px;
-    min-width: 200px;
-    max-width: 200px;
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
     justify-content: center;
     box-sizing: border-box;
     -webkit-appearance: none;
     appearance: none;
     margin: 0;
     outline: none;
-    flex: 0 0 200px;
+    flex: 0 0 140px;
 }
 
 .view-comments-btn:hover {
@@ -1247,7 +1236,7 @@ a-sky {
 .date-time {
     background: rgba(255, 255, 255, 0.95);
     color: black;
-    padding: 0 4px;
+    padding: 0 12px;
     height: 48px;
     border-radius: 12px;
     font-size: 14px;
@@ -1263,16 +1252,16 @@ a-sky {
     transition: all 0.3s ease;
     user-select: none;
     font-family: 'Manrope', sans-serif;
-    width: 200px;
-    min-width: 200px;
-    max-width: 200px;
+    width: 170px;
+    min-width: 170px;
+    max-width: 170px;
     justify-content: center;
     box-sizing: border-box;
     -webkit-appearance: none;
     appearance: none;
     margin: 0;
     outline: none;
-    flex: 0 0 200px;
+    flex: 0 0 170px;
 }
 
 .date-time:hover {
@@ -1560,11 +1549,7 @@ a-sky {
         display: none;
     }
     
-    .action-buttons {
-        display: none;
-    }
-    
-    .zoom-controls {
+    .right-controls {
         display: none;
     }
     

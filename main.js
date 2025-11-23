@@ -27,6 +27,13 @@ const FLOORS = {
     }
 };
 
+// Low-res placeholders per floor/step
+const PLACEHOLDER_IMAGES = {
+    '3rd': {
+        1: './data/placeholder/Step 1.jpg'
+    }
+};
+
 // Equirectangular image dimensions (standard 2:1 ratio)
 const EQUIRECT_WIDTH = 4096;
 const EQUIRECT_HEIGHT = 2048;
@@ -1147,6 +1154,7 @@ function exportCurrentView() {
 // Update zoom level
 const MIN_ZOOM = 75;
 const MAX_ZOOM = 150;
+const DEFAULT_ZOOM = 90;
 
 function applyZoomLevel(newZoom) {
     const clamped = Math.min(Math.max(newZoom, MIN_ZOOM), MAX_ZOOM);
@@ -1181,7 +1189,7 @@ function updateZoom(direction) {
     } else if (direction === 'out') {
         applyZoomLevel(currentZoom - zoomStep);
     } else if (direction === 'reset') {
-        applyZoomLevel(100); // Reset to default
+        applyZoomLevel(DEFAULT_ZOOM); // Reset to default
     }
 }
 
@@ -1248,6 +1256,12 @@ function getImageUrl(step) {
     return `${config.imageDir}step-${paddedStep}${EXT}`;
 }
 
+function getPlaceholderUrl(floorKey, step) {
+    const placeholders = PLACEHOLDER_IMAGES[floorKey];
+    if (!placeholders) return null;
+    return placeholders[step] || placeholders.default || null;
+}
+
 // Preload an image
 function preloadImage(step) {
     return new Promise((resolve, reject) => {
@@ -1296,15 +1310,24 @@ function hideConnectionError() {
 }
 
 // Update the current step
-async function setStep(step, skipAnimation = false) {
+async function setStep(step, options = {}) {
+    const { skipAnimation = false, useLoader = true } = options;
     const totalSteps = getTotalSteps();
     if (isLoading || step < 1 || step > totalSteps) return;
     
     // Check if image is already cached - if so, skip loading overlay for instant display
     const isImageCached = imageCache.has(step);
     
-    if (!isImageCached) {
+    const shouldUseLoader = useLoader && !isImageCached;
+    isLoading = true;
+    
+    if (shouldUseLoader) {
         showLoading();
+    } else if (!isImageCached) {
+        const placeholderUrl = getPlaceholderUrl(currentFloor, step);
+        if (placeholderUrl) {
+            skyImage.setAttribute('src', placeholderUrl);
+        }
     }
     
     try {
@@ -1355,14 +1378,18 @@ async function setStep(step, skipAnimation = false) {
         }
         
         // Hide loading instantly for smooth UX (only if we showed it)
-        if (!isImageCached) {
+        if (shouldUseLoader) {
             hideLoading();
+        } else {
+            isLoading = false;
         }
         
     } catch (error) {
         console.error('Error loading step:', error);
-        if (!isImageCached) {
+        if (shouldUseLoader) {
             hideLoading();
+        } else {
+            isLoading = false;
         }
         showConnectionError();
     }
@@ -1402,6 +1429,12 @@ async function switchFloor(floorKey) {
     // Update dropdown value
     floorDropdown.value = floorKey;
     
+    // Show placeholder instantly if available
+    const placeholderUrl = getPlaceholderUrl(currentFloor, 1);
+    if (placeholderUrl) {
+        skyImage.setAttribute('src', placeholderUrl);
+    }
+    
     // Update minimap background
     const config = getCurrentFloorConfig();
     const minimapBg = document.querySelector('.minimap-bg');
@@ -1413,7 +1446,7 @@ async function switchFloor(floorKey) {
     await createMinimap();
     
     // Load first step of new floor
-    await setStep(1, false);
+    await setStep(1, { skipAnimation: false });
 }
 
 // Event listeners
@@ -1746,9 +1779,24 @@ function setupDatePicker() {
 }
 
 // Initialize
-window.addEventListener('load', () => {
+document.addEventListener('DOMContentLoaded', () => {
+    // Start preloading the first high-res image immediately
+    console.log('Starting early preload of first image...');
+    preloadImage(1).catch(() => {
+        console.warn('Early preload of first image failed, will retry on initialization');
+    });
+    
     // Wait for A-Frame scene to be fully ready before initializing
     const scene = document.querySelector('a-scene');
+    if (scene) {
+        scene.addEventListener('loaded', () => {
+            console.log('A-Frame scene loaded successfully');
+        });
+        
+        scene.addEventListener('error', (error) => {
+            console.error('A-Frame scene error:', error);
+        });
+    }
     
     const initializeApp = () => {
         console.log('Initializing app...');
@@ -1756,13 +1804,19 @@ window.addEventListener('load', () => {
         // Create the minimap (async, but don't wait)
         createMinimap();
         
+        // Ensure placeholder is visible immediately
+        const placeholderUrl = getPlaceholderUrl(currentFloor, 1);
+        if (placeholderUrl) {
+            skyImage.setAttribute('src', placeholderUrl);
+        }
+        
         // Load the first step
         // Aim slightly to the right of the first comment so it appears just left of center
         const initialComment = COMMENTS['3rd'] && COMMENTS['3rd'][1] && COMMENTS['3rd'][1][0];
         if (initialComment) {
             pendingLookAt = { x: initialComment.x, y: initialComment.y, yawOffset: -12 };
         }
-        setStep(1, true);
+        setStep(1, { skipAnimation: true, useLoader: false });
         
         // Create comment pins immediately - scene should be ready by now
         // Use requestAnimationFrame to ensure DOM is ready
@@ -1824,33 +1878,4 @@ window.addEventListener('load', () => {
         console.warn('A-Frame scene not found, initializing anyway');
         initializeApp();
     }
-});
-
-// Handle A-Frame scene load errors and start early preloading
-document.addEventListener('DOMContentLoaded', () => {
-    const scene = document.querySelector('a-scene');
-    if (scene) {
-        scene.addEventListener('loaded', () => {
-            console.log('A-Frame scene loaded successfully');
-        });
-        
-        scene.addEventListener('error', (error) => {
-            console.error('A-Frame scene error:', error);
-        });
-    }
-    
-    // Start preloading the first image immediately (don't wait for window.load)
-    // This gives us a head start on image loading
-    console.log('Starting early preload of first image...');
-    const firstImageUrl = getImageUrl(1);
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-        imageCache.set(1, img);
-        console.log('First image preloaded successfully');
-    };
-    img.onerror = () => {
-        console.warn('Early preload of first image failed, will retry on initialization');
-    };
-    img.src = firstImageUrl;
 });
