@@ -2,6 +2,12 @@ body {
     margin: 0;
     font-family: 'Manrope', sans-serif;
     overflow: hidden;
+    background: #000;
+}
+
+a-scene,
+a-scene canvas {
+    background: #000 !important; /* avoid white flash before sky loads */
 }
 
 /* Navigation UI */
